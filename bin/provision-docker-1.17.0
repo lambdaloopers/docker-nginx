@@ -1,0 +1,49 @@
+#!/bin/bash
+
+####################
+###   Binaries   ###
+####################
+CURL=$(which curl)
+####################
+
+if [[ $UID != 0 ]]; then
+    echo "Please run this script with sudo:"
+    echo "sudo $0 $*"
+    exit 1
+fi
+
+echo "[$(date +"%Y-%m-%d %T")] Starting docker-compose installation:"
+echo "[$(date +"%Y-%m-%d %T")] Downloading latest version of docker-compose..."
+${CURL} -L https://github.com/docker/compose/releases/download/1.17.0-rc1/docker-compose-`uname -s`-`uname -m` > /tmp/docker-compose
+
+echo "[$(date +"%Y-%m-%d %T")] Removing current version of the binary..."
+rm -rf /usr/local/bin/docker-compose;
+
+echo "[$(date +"%Y-%m-%d %T")] Placing the newest version in /usr/local/bin..."
+mv /tmp/docker-compose /usr/local/bin/docker-compose
+
+echo "[$(date +"%Y-%m-%d %T")] Adding execution permissions to the new binary..."
+chmod +x /usr/local/bin/docker-compose
+echo "[$(date +"%Y-%m-%d %T")] Docker-compose installation: Done!"
+
+echo "[$(date +"%Y-%m-%d %T")] Starting docker-ce installation:"
+echo "[$(date +"%Y-%m-%d %T")] Adding the docker ppa key and repository..."
+${CURL} -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+echo "[$(date +"%Y-%m-%d %T")] Updating ubuntu's dependencies and installing latest version of docker-ce..."
+apt-get update
+apt-get -y install docker-ce
+
+echo "[$(date +"%Y-%m-%d %T")] Adding group docker if it doesn't exist..."
+sudo groupadd docker
+echo "[$(date +"%Y-%m-%d %T")] Adding user to docker group..."
+sudo gpasswd -a ${USER} docker
+echo "[$(date +"%Y-%m-%d %T")] Restarting docker service to apply the changes..."
+service docker restart
+
+echo "[$(date +"%Y-%m-%d %T")] Docker installation: Done!"
+echo "[$(date +"%Y-%m-%d %T")] You're all set to start using the latest version of docker & docker compose! If this is your first time installing docker, log out to apply the changes or run:"
+echo "                         $ newgrp docker"
+echo "to create a new session"
+
